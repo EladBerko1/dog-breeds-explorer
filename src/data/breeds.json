@@ -1,0 +1,8 @@
+[
+  { "id": "beagle", "name": "Beagle", "subBreeds": [] },
+  { "id": "bulldog", "name": "Bulldog", "subBreeds": ["boston", "english", "french"] },
+  { "id": "hound", "name": "Hound", "subBreeds": ["afghan", "basset", "blood", "english", "ibizan", "plott", "walker"] },
+  { "id": "husky", "name": "Husky", "subBreeds": [] },
+  { "id": "poodle", "name": "Poodle", "subBreeds": ["medium", "miniature", "standard", "toy"] },
+  { "id": "retriever", "name": "Retriever", "subBreeds": ["chesapeake", "curly", "flatcoated", "golden"] }
+]
