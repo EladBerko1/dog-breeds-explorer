@@ -7,7 +7,7 @@
 - [x] Task 1: רשימת גזעים מקובץ JSON מקומי (`src/data/breeds.json`) עם טיפוס `Breed` ב-`src/types.ts`, ורכיבים `BreedCard` ו-`BreedList` (רשימה עם `map` ו-`key`).
   Done when: אני פותח את האפליקציה ורואה 6 גזעים לדוגמה, כל אחד עם שם ומספר תתי-הגזעים שלו.
 
-- [ ] Task 2: ניתוב עם React Router — עמוד רשימה ב-`/`, עמוד פרטים ב-`/breeds/:id` (קורא את ה-`id` עם `useParams`), ורכיב `NavBar` עם `NavLink`.
+- [x] Task 2: ניתוב עם React Router — עמוד רשימה ב-`/`, עמוד פרטים ב-`/breeds/:id` (קורא את ה-`id` עם `useParams`), ורכיב `NavBar` עם `NavLink`.
   Done when: לחיצה על "hound" משנה את הכתובת ל-`/breeds/hound` ומציגה את השם ותתי-הגזעים שלו; כפתור "Back" בדפדפן מחזיר לרשימה.
 
 - [ ] Task 3: החלפת הקובץ המקומי ב-`fetch` אמיתי בתוך `useEffect` מ-`/breeds/list/all`, עם פונקציה שממירה את האובייקט מה-API למערך `Breed[]`, ומצבי טעינה ושגיאה (רכיבים `Loader` ו-`ErrorMessage`).
