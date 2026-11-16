@@ -1,7 +1,7 @@
 # הכנה להגנה — Dog Breeds Explorer
 
 מסמך לימוד אישי לקראת ההגנה על הפרויקט. מתעדכן אחרי כל משימה.
-**מצב נוכחי:** משימות 1–6 הושלמו (רשימה, ניתוב, API, בדיקות, גלריית תמונות, חיפוש וסינון). עוד לא נבנו: מועדפים, חידון, 404, עיצוב.
+**מצב נוכחי:** משימות 1–7 הושלמו (רשימה, ניתוב, API, בדיקות, גלריית תמונות, חיפוש וסינון, מועדפים). עוד לא נבנו: חידון, 404, עיצוב.
 
 **מה ההגנה בודקת:** כ-7 דקות של שאלות על הקוד שלי, בלי סוכן ובלי חיפוש. המרצה עשוי לבקש לפתוח קובץ ולהראות איפה משהו קורה. הנקודות על הפרויקט ניתנות רק אם אני יודע להסביר אותו.
 
@@ -24,8 +24,10 @@
 | `src/types.ts` | הטיפוסים: `Breed`, `BreedsApiResponse`, `BreedImagesApiResponse` |
 | `src/api/dogApi.ts` | כל הפנייה ל-API: `fetchBreeds()` ו-`fetchBreedImages()` |
 | `src/utils/breeds.ts` | לוגיקה טהורה: `toBreeds()`, `formatBreedName()`, `filterBreeds()` |
-| `src/components/` | רכיבים: `NavBar`, `BreedList`, `BreedCard`, `Loader`, `ErrorMessage`, `ImageGallery`, `SearchBar` |
-| `src/pages/` | עמודים: `BreedsPage`, `BreedDetailPage` |
+| `src/utils/favorites.ts` | לוגיקה טהורה של המועדפים: `toggleFavorite()`, `parseFavorites()` |
+| `src/hooks/useFavorites.ts` | custom hook: state של המועדפים + שמירה ב-`localStorage` |
+| `src/components/` | רכיבים: `NavBar`, `BreedList`, `BreedCard`, `Loader`, `ErrorMessage`, `ImageGallery`, `SearchBar`, `FavoriteButton` |
+| `src/pages/` | עמודים: `BreedsPage`, `BreedDetailPage`, `FavoritesPage` |
 | `src/index.css` | כל ה-CSS |
 | `*.test.ts` | בדיקות Vitest |
 
@@ -56,14 +58,17 @@
 ## 4. עץ הרכיבים וזרימת המידע
 
 ```
-App  (מחזיק: breeds, isLoading, error)
-├── NavBar
+App  (מחזיק: breeds, isLoading, error, ו-favorites דרך useFavorites)
+├── NavBar(favoritesCount)
 └── Routes
     ├── "/"           → BreedsPage(breeds)  (מחזיק: query, onlyWithSubBreeds)
     │                    ├── SearchBar(query, onQueryChange, ...)
     │                    └── BreedList(visibleBreeds) → BreedCard(breed) × עד 108
-    └── "/breeds/:id" → BreedDetailPage(breeds)  (מחזיק: result של התמונות)
-                         └── Loader / ErrorMessage / ImageGallery(images, breedName)
+    ├── "/breeds/:id" → BreedDetailPage(breeds, isFavorite, onToggleFavorite)  (מחזיק: result של התמונות)
+    │                    ├── FavoriteButton(isFavorite, onToggle)
+    │                    └── Loader / ErrorMessage / ImageGallery(images, breedName)
+    └── "/favorites"  → FavoritesPage(breeds, favoriteIds, onRemove)
+                         └── BreedList(favoriteBreeds, onRemove) → BreedCard(breed, onRemove)
 ```
 
 **המידע זורם מלמעלה למטה דרך props.** `App` מעביר את `breeds` לעמודים, `BreedsPage` מעביר ל-`BreedList`, ו-`BreedList` נותן לכל `BreedCard` גזע אחד.
@@ -332,13 +337,62 @@ return breeds.filter((breed) => {
 
 ---
 
+## 10ג. מועדפים ו-`localStorage` (העמוד הנוסף הראשון)
+
+**מה המשתמש עושה:** בעמוד גזע לוחץ "☆ Add to favorites" (הכפתור הופך ל-"★ Remove from favorites"). בתפריט מופיע "Favorites (2)". בעמוד `/favorites` רואה את הגזעים שסימן, נכנס אליהם, או לוחץ "Remove". הכול נשאר גם אחרי רענון.
+
+**איפה ה-state ולמה ב-`App`:** שלושה חלקים צריכים את המועדפים — עמוד הפרטים (הכפתור), עמוד המועדפים (הרשימה) והתפריט (המספר). כשכמה רכיבים צריכים אותו מידע, מעלים אותו להורה המשותף הקרוב ("lifting state up"). ההורה המשותף של שלושתם הוא `App`.
+
+**מה נשמר:** רק **מזהים** — `["beagle", "hound"]`. לא שומרים את הגזעים המלאים, כי הם כבר מגיעים מה-API. `FavoritesPage` מוצא את הגזעים לפי המזהים:
+```ts
+const favoriteBreeds = breeds.filter((breed) => favoriteIds.includes(breed.id))
+```
+
+**`localStorage`:**
+- אחסון של הדפדפן, שנשאר גם אחרי רענון וסגירה. כל אתר מקבל אחסון משלו.
+- שומר **רק טקסט**. לכן `JSON.stringify(favoriteIds)` בשמירה, ו-`JSON.parse` בקריאה.
+- איך רואים: F12 ← Application ← Local Storage ← `http://localhost:5173` ← המפתח `dog-breeds-favorites`.
+
+**Custom hook (`useFavorites`):**
+- פונקציה שהשם שלה מתחיל ב-`use` ומשתמשת ב-hooks אחרים (`useState`, `useEffect`).
+- היא אורזת את כל הלוגיקה של המועדפים במקום אחד, ומחזירה `{ favoriteIds, isFavorite, toggle }`.
+- `App` רק קורא `const favorites = useFavorites()`, בלי לדעת איך זה נשמר.
+
+**קריאה פעם אחת — lazy initial state:**
+```ts
+const [favoriteIds, setFavoriteIds] = useState<string[]>(() => parseFavorites(localStorage.getItem(STORAGE_KEY)))
+```
+כשמעבירים ל-`useState` **פונקציה**, React מריץ אותה רק בציור הראשון. כך לא קוראים מ-`localStorage` בכל ציור.
+
+**שמירה בכל שינוי:**
+```ts
+useEffect(() => {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(favoriteIds))
+}, [favoriteIds])
+```
+`useEffect` מתאים כאן כי זה **סנכרון עם מערכת חיצונית** (האחסון של הדפדפן) — בדיוק מה ש-effect נועד לו.
+
+**`setFavoriteIds((current) => toggleFavorite(current, breedId))`:** מעבירים ל-set **פונקציה** שמקבלת את הערך העדכני. כך גם שתי לחיצות מהירות מחושבות נכון.
+
+**`toggleFavorite` מחזיר מערך חדש ולא משנה את הישן:** `[...favoriteIds, breedId]` (הוספה) ו-`filter` (הסרה). React מזהה שינוי לפי **הפניה חדשה**. אם הייתי עושה `push` על המערך הקיים, React לא היה רואה שינוי ולא היה מצייר מחדש.
+
+**`parseFavorites` — הגנה מטקסט פגום:** ב-`localStorage` יכול להיות כל דבר (המשתמש יכול לערוך אותו ב-DevTools). אם `JSON.parse` נכשל או שהתוצאה לא מערך של מחרוזות — מחזירים `[]` במקום לקרוס. `unknown` (ולא `any`) מכריח לבדוק את הסוג לפני שמשתמשים בערך.
+
+**`try/catch` סביב `localStorage`:** בגלישה פרטית או כשהאחסון חסום, הגישה יכולה לזרוק שגיאה. אז האפליקציה ממשיכה לעבוד, רק בלי שמירה.
+
+**prop אופציונלי `onRemove?`:** ב-`BreedList` וב-`BreedCard`. בעמוד הרשימה לא מעבירים אותו — אין כפתור. בעמוד המועדפים מעבירים — מופיע "Remove". `{onRemove && (<button ...>)}` = "הצג רק אם יש פונקציה". כך **אותו רכיב** משמש בשני עמודים.
+
+**`aria-pressed`:** אומר לקורא מסך שהכפתור במצב "לחוץ" (מועדף). אותו מאפיין משמש גם ב-CSS לצבע הצהוב.
+
+---
+
 ## 11. בדיקות עם Vitest
 
 **הפקודות:**
 - `npm test` → `vitest run` — מריץ פעם אחת ויוצא.
 - `npm run test:ui` → `vitest --ui` — מציג את הבדיקות בדפדפן.
 
-**14 בדיקות, בשני קבצים:**
+**20 בדיקות, בשלושה קבצים:**
 
 `src/utils/breeds.test.ts` (10):
 1. `formatBreedName('hound')` → `'Hound'`
@@ -347,6 +401,10 @@ return breeds.filter((breed) => {
 4. ה-`id` נשאר `'hound'` (בלי פירמוט), וה-`name` הוא `'Hound'`
 5. `toBreeds({})` → `[]`
 - `filterBreeds`: חיפוש ריק → הכול · "bull" → bulldog, bullterrier, pitbull · "  BEA " → beagle (רווחים ואותיות גדולות) · "bull" + צ'קבוקס → בלי pitbull · "cat" → `[]`
+
+`src/utils/favorites.test.ts` (6):
+- `toggleFavorite`: מוסיף גזע חדש · מסיר גזע קיים · לא משנה את המערך המקורי
+- `parseFavorites`: קורא רשימה שמורה · `null` → `[]` · טקסט פגום (לא JSON, או אובייקט) → `[]`
 
 `src/api/dogApi.test.ts` (4):
 6. כשה-API מצליח — `fetchBreeds` מחזיר מערך גזעים
@@ -422,6 +480,14 @@ describe('formatBreedName', () => {        // קבוצה
 27. מה קורה מההקלדה של אות ועד שהרשימה מתעדכנת?
 28. למה `filterBreeds` בקובץ נפרד ולא בתוך הרכיב?
 29. למה החיפוש מתאפס כשחוזרים מעמוד גזע, ואיך היית משנה את זה?
+30. איפה נשמרים המועדפים בזמן ריצה, ואיפה בין רענונים?
+31. למה ה-state של המועדפים ב-`App` ולא בעמוד המועדפים?
+32. מה זה custom hook? מה `useFavorites` מחזיר?
+33. למה מעבירים ל-`useState` פונקציה (`() => ...`) ולא ערך?
+34. למה צריך `JSON.stringify` ו-`JSON.parse`?
+35. למה `toggleFavorite` מחזיר מערך חדש ולא עושה `push`?
+36. מה קורה אם ב-`localStorage` יש טקסט פגום?
+37. איך אותו `BreedCard` מציג כפתור "Remove" רק בעמוד המועדפים?
 
 ---
 
@@ -434,5 +500,7 @@ describe('formatBreedName', () => {        // קבוצה
 - לשנות `toUpperCase()` ל-`toLowerCase()` → לראות בדיקות אדומות ב-`npm run test:ui`.
 - להוסיף ל-`BreedCard` שורה שמציגה את ה-`id` של הגזע.
 - לשנות ב-`BreedDetailPage` את המספר `12` ל-`4` → לראות 4 תמונות בגלריה.
+- ב-F12 ← Application ← Local Storage למחוק את `dog-breeds-favorites` ולרענן → המועדפים ריקים.
+- לשנות שם את הערך ל-`abc` ולרענן → האפליקציה לא קורסת (בזכות `parseFavorites`).
 - להוסיף ל-`filterBreeds` חיפוש גם בתתי-הגזעים (`breed.subBreeds.some(...)`) → "french" ימצא את bulldog.
 - ב-F12 ← Network לבחור Slow 4G, להיכנס ל-Hound ומיד לחזור → לראות בקשה מבוטלת (canceled).

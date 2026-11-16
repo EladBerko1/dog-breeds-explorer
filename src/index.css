@@ -127,3 +127,38 @@ body {
   color: #6b6b6b;
   margin: 0 0 8px;
 }
+
+.breed-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.breed-card a {
+  flex: 1;
+}
+
+.favorite-button,
+.remove-button {
+  font: inherit;
+  cursor: pointer;
+  border: 1px solid #cfc6b8;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.favorite-button {
+  padding: 8px 14px;
+  margin-bottom: 8px;
+}
+
+.favorite-button[aria-pressed='true'] {
+  background: #fff4d6;
+  border-color: #e0b84c;
+}
+
+.remove-button {
+  margin: 0 16px 12px;
+  padding: 4px 10px;
+  align-self: flex-start;
+  color: #8a1f1f;
+}

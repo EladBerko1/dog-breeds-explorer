@@ -4,8 +4,10 @@ import { fetchBreeds } from './api/dogApi'
 import ErrorMessage from './components/ErrorMessage'
 import Loader from './components/Loader'
 import NavBar from './components/NavBar'
+import { useFavorites } from './hooks/useFavorites'
 import BreedDetailPage from './pages/BreedDetailPage'
 import BreedsPage from './pages/BreedsPage'
+import FavoritesPage from './pages/FavoritesPage'
 import type { Breed } from './types'
 
 function App() {
@@ -13,6 +15,9 @@ function App() {
   const [breeds, setBreeds] = useState<Breed[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // המועדפים כאן, כי שלושה חלקים צריכים אותם: עמוד הפרטים, עמוד המועדפים והתפריט
+  const favorites = useFavorites()
 
   // רץ פעם אחת, כשהאפליקציה עולה ([] = בלי תלויות)
   useEffect(() => {
@@ -45,14 +50,33 @@ function App() {
     content = (
       <Routes>
         <Route path="/" element={<BreedsPage breeds={breeds} />} />
-        <Route path="/breeds/:id" element={<BreedDetailPage breeds={breeds} />} />
+        <Route
+          path="/breeds/:id"
+          element={
+            <BreedDetailPage
+              breeds={breeds}
+              isFavorite={favorites.isFavorite}
+              onToggleFavorite={favorites.toggle}
+            />
+          }
+        />
+        <Route
+          path="/favorites"
+          element={
+            <FavoritesPage
+              breeds={breeds}
+              favoriteIds={favorites.favoriteIds}
+              onRemove={favorites.toggle}
+            />
+          }
+        />
       </Routes>
     )
   }
 
   return (
     <>
-      <NavBar />
+      <NavBar favoritesCount={favorites.favoriteIds.length} />
       <main className="app">{content}</main>
     </>
   )

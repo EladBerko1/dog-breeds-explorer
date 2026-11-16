@@ -2,12 +2,15 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { fetchBreedImages } from '../api/dogApi'
 import ErrorMessage from '../components/ErrorMessage'
+import FavoriteButton from '../components/FavoriteButton'
 import ImageGallery from '../components/ImageGallery'
 import Loader from '../components/Loader'
 import type { Breed } from '../types'
 
 interface BreedDetailPageProps {
   breeds: Breed[]
+  isFavorite: (breedId: string) => boolean
+  onToggleFavorite: (breedId: string) => void
 }
 
 interface GalleryResult {
@@ -16,7 +19,7 @@ interface GalleryResult {
   error: string | null
 }
 
-function BreedDetailPage({ breeds }: BreedDetailPageProps) {
+function BreedDetailPage({ breeds, isFavorite, onToggleFavorite }: BreedDetailPageProps) {
   // id נקרא מהכתובת: בכתובת /breeds/hound הערך הוא "hound"
   const { id } = useParams()
   const breed = breeds.find((item) => item.id === id)
@@ -73,6 +76,7 @@ function BreedDetailPage({ breeds }: BreedDetailPageProps) {
     <>
       <Link to="/">← Back to all breeds</Link>
       <h1>{breed.name}</h1>
+      <FavoriteButton isFavorite={isFavorite(breed.id)} onToggle={() => onToggleFavorite(breed.id)} />
       {breed.subBreeds.length === 0 ? (
         <p>This breed has no sub-breeds.</p>
       ) : (
