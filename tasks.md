@@ -10,7 +10,7 @@
 - [x] Task 2: ניתוב עם React Router — עמוד רשימה ב-`/`, עמוד פרטים ב-`/breeds/:id` (קורא את ה-`id` עם `useParams`), ורכיב `NavBar` עם `NavLink`.
   Done when: לחיצה על "hound" משנה את הכתובת ל-`/breeds/hound` ומציגה את השם ותתי-הגזעים שלו; כפתור "Back" בדפדפן מחזיר לרשימה.
 
-- [ ] Task 3: החלפת הקובץ המקומי ב-`fetch` אמיתי בתוך `useEffect` מ-`/breeds/list/all`, עם פונקציה שממירה את האובייקט מה-API למערך `Breed[]`, ומצבי טעינה ושגיאה (רכיבים `Loader` ו-`ErrorMessage`).
+- [x] Task 3: החלפת הקובץ המקומי ב-`fetch` אמיתי בתוך `useEffect` מ-`/breeds/list/all`, עם פונקציה שממירה את האובייקט מה-API למערך `Breed[]`, ומצבי טעינה ושגיאה (רכיבים `Loader` ו-`ErrorMessage`).
   Done when: אני רואה "Loading…" ואז את כל הגזעים מה-API (יותר מ-100), והקובץ המקומי נמחק; כשאני מעביר את DevTools למצב Offline ומרענן, אני רואה הודעת שגיאה.
 
 - [ ] Task 4: Vitest + Vitest UI — סקריפטים `test` ו-`test:ui`, ובדיקות לפונקציית ההמרה ולפורמט שם הגזע.
