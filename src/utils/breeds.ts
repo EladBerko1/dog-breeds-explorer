@@ -15,3 +15,15 @@ export function toBreeds(message: Record<string, string[]>): Breed[] {
     subBreeds,
   }))
 }
+
+// מסנן את הגזעים לפי טקסט חיפוש, ואם צריך — רק גזעים שיש להם תתי-גזעים.
+// החיפוש לא רגיש לאותיות גדולות/קטנות ומתעלם מרווחים בהתחלה ובסוף.
+export function filterBreeds(breeds: Breed[], query: string, onlyWithSubBreeds: boolean): Breed[] {
+  const search = query.trim().toLowerCase()
+
+  return breeds.filter((breed) => {
+    const matchesSearch = breed.id.includes(search)
+    const matchesSubBreeds = !onlyWithSubBreeds || breed.subBreeds.length > 0
+    return matchesSearch && matchesSubBreeds
+  })
+}

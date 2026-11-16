@@ -19,7 +19,7 @@
 - [x] Task 5: גלריית תמונות בעמוד הפרטים (רכיב `ImageGallery`), כולל מצבי טעינה ושגיאה.
   Done when: בעמוד `/breeds/hound` אני רואה עד 12 תמונות של hound.
 
-- [ ] Task 6: חיפוש וסינון — רכיב `SearchBar`, פונקציית `filterBreeds` נפרדת, וצ'קבוקס "רק עם תתי-גזעים". בדיקות לסינון.
+- [x] Task 6: חיפוש וסינון — רכיב `SearchBar`, פונקציית `filterBreeds` נפרדת, וצ'קבוקס "רק עם תתי-גזעים". בדיקות לסינון.
   Done when: אני מקליד "bull" ורואה בדיוק את bulldog, bullterrier ו-pitbull; `npm test` עובר עם לפחות 5 בדיקות.
 
 - [ ] Task 7: עמוד מועדפים ב-`/favorites` — כפתור `FavoriteButton` בעמוד הפרטים, שמירה ב-`localStorage`.

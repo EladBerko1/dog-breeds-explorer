@@ -1,7 +1,7 @@
 # הכנה להגנה — Dog Breeds Explorer
 
 מסמך לימוד אישי לקראת ההגנה על הפרויקט. מתעדכן אחרי כל משימה.
-**מצב נוכחי:** משימות 1–5 הושלמו (רשימה, ניתוב, API, בדיקות, גלריית תמונות). עוד לא נבנו: חיפוש, מועדפים, חידון, 404, עיצוב.
+**מצב נוכחי:** משימות 1–6 הושלמו (רשימה, ניתוב, API, בדיקות, גלריית תמונות, חיפוש וסינון). עוד לא נבנו: מועדפים, חידון, 404, עיצוב.
 
 **מה ההגנה בודקת:** כ-7 דקות של שאלות על הקוד שלי, בלי סוכן ובלי חיפוש. המרצה עשוי לבקש לפתוח קובץ ולהראות איפה משהו קורה. הנקודות על הפרויקט ניתנות רק אם אני יודע להסביר אותו.
 
@@ -23,8 +23,8 @@
 | `src/App.tsx` | מחזיק את ה-state של הגזעים, מושך מה-API, ומגדיר את הכתובות |
 | `src/types.ts` | הטיפוסים: `Breed`, `BreedsApiResponse`, `BreedImagesApiResponse` |
 | `src/api/dogApi.ts` | כל הפנייה ל-API: `fetchBreeds()` ו-`fetchBreedImages()` |
-| `src/utils/breeds.ts` | לוגיקה טהורה: `toBreeds()` ו-`formatBreedName()` |
-| `src/components/` | רכיבים: `NavBar`, `BreedList`, `BreedCard`, `Loader`, `ErrorMessage`, `ImageGallery` |
+| `src/utils/breeds.ts` | לוגיקה טהורה: `toBreeds()`, `formatBreedName()`, `filterBreeds()` |
+| `src/components/` | רכיבים: `NavBar`, `BreedList`, `BreedCard`, `Loader`, `ErrorMessage`, `ImageGallery`, `SearchBar` |
 | `src/pages/` | עמודים: `BreedsPage`, `BreedDetailPage` |
 | `src/index.css` | כל ה-CSS |
 | `*.test.ts` | בדיקות Vitest |
@@ -59,7 +59,9 @@
 App  (מחזיק: breeds, isLoading, error)
 ├── NavBar
 └── Routes
-    ├── "/"           → BreedsPage(breeds) → BreedList(breeds) → BreedCard(breed) × 108
+    ├── "/"           → BreedsPage(breeds)  (מחזיק: query, onlyWithSubBreeds)
+    │                    ├── SearchBar(query, onQueryChange, ...)
+    │                    └── BreedList(visibleBreeds) → BreedCard(breed) × עד 108
     └── "/breeds/:id" → BreedDetailPage(breeds)  (מחזיק: result של התמונות)
                          └── Loader / ErrorMessage / ImageGallery(images, breedName)
 ```
@@ -282,20 +284,69 @@ return () => { controller.abort() }
 
 ---
 
+## 10ב. חיפוש וסינון (`BreedsPage.tsx`, `SearchBar.tsx`, `filterBreeds`)
+
+**מה המשתמש עושה:** מקליד בשדה חיפוש, ויכול לסמן "Only breeds with sub-breeds". מתחת מופיע "Showing X of 108 breeds".
+
+**איפה ה-state:** ב-`BreedsPage` — `query` ו-`onlyWithSubBreeds`. רק עמוד הרשימה צריך אותם.
+
+**הרשימה המסוננת לא נשמרת ב-state:**
+```ts
+const visibleBreeds = filterBreeds(breeds, query, onlyWithSubBreeds)
+```
+היא **מחושבת** בכל ציור מתוך `breeds` והחיפוש. אם הייתי שומר אותה ב-state, היו שני מקורות לאותו מידע, והם עלולים לצאת מסנכרון. כלל אצבע: מה שאפשר לחשב — לא שומרים ב-state.
+
+**`SearchBar` הוא controlled component:**
+- הוא **לא מחזיק state**. הערך מגיע מההורה: `value={query}`.
+- כל הקלדה מדווחת להורה: `onChange={(event) => onQueryChange(event.target.value)}`.
+- ההורה מעדכן את ה-state → React מצייר מחדש → השדה מציג את הערך החדש והרשימה מתעדכנת.
+- כך **מעבירים פונקציה ב-props** — זו הדרך של רכיב-ילד "לדבר" עם ההורה.
+- בצ'קבוקס: `checked` ו-`event.target.checked` (במקום `value`).
+
+**הזרימה בהקלדה של "bull":**
+1. המשתמש מקליד → `onChange` ב-`SearchBar`.
+2. `onQueryChange('bull')` = `setQuery('bull')` ב-`BreedsPage`.
+3. `BreedsPage` מצויר מחדש → `filterBreeds` מחזיר 3 גזעים.
+4. `BreedList` מקבל את 3 הגזעים → מציג 3 כרטיסים.
+
+**`filterBreeds` — פונקציה טהורה:**
+```ts
+const search = query.trim().toLowerCase()
+return breeds.filter((breed) => {
+  const matchesSearch = breed.id.includes(search)
+  const matchesSubBreeds = !onlyWithSubBreeds || breed.subBreeds.length > 0
+  return matchesSearch && matchesSubBreeds
+})
+```
+- `trim()` מסיר רווחים בהתחלה ובסוף, `toLowerCase()` — לא רגיש לאותיות גדולות.
+- מחפשים ב-`breed.id` כי הוא תמיד באותיות קטנות (כמו ב-API).
+- `!onlyWithSubBreeds || ...` = "אם הצ'קבוקס כבוי — כל גזע עובר; אם דלוק — רק עם תתי-גזעים".
+- `filter` מחזיר מערך **חדש** ולא משנה את המקורי.
+- **למה בקובץ נפרד (`utils`) ולא בתוך הרכיב:** כך אפשר לבדוק אותה ב-Vitest בלי React.
+
+**ה-`key` עובד כאן:** כשהרשימה מסוננת, הכרטיסים משנים מקום. בגלל `key={breed.id}` React יודע איזה כרטיס הוא איזה.
+
+**התנהגות שכדאי להכיר:** חיפוש → כניסה לגזע → חזרה = החיפוש מתאפס. כי `BreedsPage` יורד מהמסך כשעוברים עמוד, וה-state שלו נמחק. **אם ישאלו "איך היית שומר את החיפוש?"** — להעביר את ה-state ל-`App`, או לשמור אותו בכתובת (`/?q=bull`) עם `useSearchParams` של React Router.
+
+**נתונים:** 42 מתוך 108 גזעים יש להם תתי-גזעים.
+
+---
+
 ## 11. בדיקות עם Vitest
 
 **הפקודות:**
 - `npm test` → `vitest run` — מריץ פעם אחת ויוצא.
 - `npm run test:ui` → `vitest --ui` — מציג את הבדיקות בדפדפן.
 
-**9 בדיקות, בשני קבצים:**
+**14 בדיקות, בשני קבצים:**
 
-`src/utils/breeds.test.ts` (5):
+`src/utils/breeds.test.ts` (10):
 1. `formatBreedName('hound')` → `'Hound'`
 2. `formatBreedName('')` → `''`
 3. `toBreeds` הופך `{ beagle: [], bulldog: [...] }` למערך עם `id`, `name`, `subBreeds`
 4. ה-`id` נשאר `'hound'` (בלי פירמוט), וה-`name` הוא `'Hound'`
 5. `toBreeds({})` → `[]`
+- `filterBreeds`: חיפוש ריק → הכול · "bull" → bulldog, bullterrier, pitbull · "  BEA " → beagle (רווחים ואותיות גדולות) · "bull" + צ'קבוקס → בלי pitbull · "cat" → `[]`
 
 `src/api/dogApi.test.ts` (4):
 6. כשה-API מצליח — `fetchBreeds` מחזיר מערך גזעים
@@ -365,6 +416,12 @@ describe('formatBreedName', () => {        // קבוצה
 21. למה ה-`useState` וה-`useEffect` נמצאים לפני ה-`return` של "Breed not found"?
 22. מה עושה `AbortController`, ומה ההבדל בינו לבין `ignore`?
 23. איך העמוד יודע שהוא עדיין טוען תמונות, בלי `isLoading` ב-state?
+24. איפה נשמר טקסט החיפוש, ולמה שם?
+25. למה `visibleBreeds` לא נשמר ב-state?
+26. מה זה controlled component? איך `SearchBar` מדווח ל-`BreedsPage` על הקלדה?
+27. מה קורה מההקלדה של אות ועד שהרשימה מתעדכנת?
+28. למה `filterBreeds` בקובץ נפרד ולא בתוך הרכיב?
+29. למה החיפוש מתאפס כשחוזרים מעמוד גזע, ואיך היית משנה את זה?
 
 ---
 
@@ -377,4 +434,5 @@ describe('formatBreedName', () => {        // קבוצה
 - לשנות `toUpperCase()` ל-`toLowerCase()` → לראות בדיקות אדומות ב-`npm run test:ui`.
 - להוסיף ל-`BreedCard` שורה שמציגה את ה-`id` של הגזע.
 - לשנות ב-`BreedDetailPage` את המספר `12` ל-`4` → לראות 4 תמונות בגלריה.
+- להוסיף ל-`filterBreeds` חיפוש גם בתתי-הגזעים (`breed.subBreeds.some(...)`) → "french" ימצא את bulldog.
 - ב-F12 ← Network לבחור Slow 4G, להיכנס ל-Hound ומיד לחזור → לראות בקשה מבוטלת (canceled).
