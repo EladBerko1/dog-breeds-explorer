@@ -1,7 +1,7 @@
 # הכנה להגנה — Dog Breeds Explorer
 
 מסמך לימוד אישי לקראת ההגנה על הפרויקט. מתעדכן אחרי כל משימה.
-**מצב נוכחי:** משימות 1–4 הושלמו (רשימה, ניתוב, API, בדיקות). עוד לא נבנו: גלריה, חיפוש, מועדפים, חידון, 404, עיצוב.
+**מצב נוכחי:** משימות 1–5 הושלמו (רשימה, ניתוב, API, בדיקות, גלריית תמונות). עוד לא נבנו: חיפוש, מועדפים, חידון, 404, עיצוב.
 
 **מה ההגנה בודקת:** כ-7 דקות של שאלות על הקוד שלי, בלי סוכן ובלי חיפוש. המרצה עשוי לבקש לפתוח קובץ ולהראות איפה משהו קורה. הנקודות על הפרויקט ניתנות רק אם אני יודע להסביר אותו.
 
@@ -21,10 +21,10 @@
 | `index.html` | קובץ ה-HTML היחיד. יש בו `<div id="root">` ריק, ש-React ממלא |
 | `src/main.tsx` | נקודת הכניסה: טוען את ה-CSS, עוטף ב-`BrowserRouter` ומצייר את `App` |
 | `src/App.tsx` | מחזיק את ה-state של הגזעים, מושך מה-API, ומגדיר את הכתובות |
-| `src/types.ts` | הטיפוסים: `Breed` ו-`BreedsApiResponse` |
-| `src/api/dogApi.ts` | `fetchBreeds()` — כל הפנייה ל-API |
+| `src/types.ts` | הטיפוסים: `Breed`, `BreedsApiResponse`, `BreedImagesApiResponse` |
+| `src/api/dogApi.ts` | כל הפנייה ל-API: `fetchBreeds()` ו-`fetchBreedImages()` |
 | `src/utils/breeds.ts` | לוגיקה טהורה: `toBreeds()` ו-`formatBreedName()` |
-| `src/components/` | רכיבים: `NavBar`, `BreedList`, `BreedCard`, `Loader`, `ErrorMessage` |
+| `src/components/` | רכיבים: `NavBar`, `BreedList`, `BreedCard`, `Loader`, `ErrorMessage`, `ImageGallery` |
 | `src/pages/` | עמודים: `BreedsPage`, `BreedDetailPage` |
 | `src/index.css` | כל ה-CSS |
 | `*.test.ts` | בדיקות Vitest |
@@ -60,7 +60,8 @@ App  (מחזיק: breeds, isLoading, error)
 ├── NavBar
 └── Routes
     ├── "/"           → BreedsPage(breeds) → BreedList(breeds) → BreedCard(breed) × 108
-    └── "/breeds/:id" → BreedDetailPage(breeds)
+    └── "/breeds/:id" → BreedDetailPage(breeds)  (מחזיק: result של התמונות)
+                         └── Loader / ErrorMessage / ImageGallery(images, breedName)
 ```
 
 **המידע זורם מלמעלה למטה דרך props.** `App` מעביר את `breeds` לעמודים, `BreedsPage` מעביר ל-`BreedList`, ו-`BreedList` נותן לכל `BreedCard` גזע אחד.
@@ -233,13 +234,61 @@ return () => { ignore = true }
 
 ---
 
+## 10א. גלריית התמונות בעמוד הפרטים (`BreedDetailPage.tsx`)
+
+**מה קורה:** העמוד מוצא את הגזע מהכתובת, ואז מושך עד 12 תמונות מ-`/breed/{breed}/images` ומציג אותן ב-`ImageGallery`.
+
+**למה ה-state של התמונות בעמוד ולא ב-`App`:** רק העמוד הזה צריך אותן. state שמשמש רק רכיב אחד נשאר אצלו. (הגזעים ב-`App`, כי שני עמודים צריכים אותם.)
+
+**`useEffect` עם תלות:** `[breedId]` = ה-effect רץ מחדש בכל פעם שהגזע משתנה. בהשוואה ל-`[]` ב-`App`, שרץ פעם אחת בלבד.
+
+**ה-hooks לפני ה-`return` המוקדם:** `useState` ו-`useEffect` חייבים להיקרא בכל ציור, באותו סדר. לכן הם נמצאים **לפני** `if (!breed) return <p>Breed not found.</p>`. זה כלל של React ("Rules of Hooks").
+
+**התוצאה זוכרת לאיזה גזע היא שייכת:**
+```ts
+interface GalleryResult { breedId: string; images: string[]; error: string | null }
+const isLoading = result === null || result.breedId !== breed.id
+```
+אין `isLoading` נפרד ב-state — הוא **מחושב**: אם התוצאה לא שייכת לגזע הנוכחי, עדיין טוענים. כך לא מוצגות לרגע תמונות של הגזע הקודם, ולא צריך לקרוא ל-`setState` בתוך ה-effect (React ממליץ להימנע מזה).
+
+**`AbortController` — ביטול בקשה:**
+```ts
+const controller = new AbortController()
+fetchBreedImages(breedId, 12, controller.signal)
+return () => { controller.abort() }
+```
+- `controller.signal` מועבר ל-`fetch`, ו-`controller.abort()` מבטל את הבקשה באמצע.
+- בפונקציית הניקוי מבטלים — כך תשובה ישנה לא תעדכן את המסך אחרי שעברנו גזע או יצאנו מהעמוד.
+- בקשה שבוטלה נכשלת, אבל זו לא שגיאה אמיתית, ולכן ב-`catch` בודקים `controller.signal.aborted` ולא מציגים הודעה.
+- **בפיתוח (`npm run dev`) רואים ב-Network בקשת תמונות אחת מבוטלת (canceled) בכל כניסה לעמוד.** זה תקין: `StrictMode` מריץ את ה-effect פעמיים בכוונה, והניקוי מבטל את הראשונה. ב-`npm run build` זה לא קורה.
+
+**`ignore` (ב-`App`) לעומת `AbortController` (בעמוד הפרטים):**
+
+| | `ignore` | `AbortController` |
+|---|---|---|
+| מה קורה לבקשה | ממשיכה עד הסוף | **מבוטלת** באמת |
+| מה קורה לתשובה | מתעלמים ממנה | לא מגיעה בכלל |
+| מתי מתאים | בקשה שרצה פעם אחת | בקשה שמתחלפת (גזע אחר) |
+
+שתי הדרכים פותרות את אותה בעיה. בעמוד הפרטים בחרתי ב-`AbortController`, כי שם הבקשה מתחלפת כשעוברים בין גזעים (וגם כי ה-linter הזהיר על `ignore` בקובץ הזה).
+
+**`ImageGallery`:**
+- `key={url}` — כתובת כל תמונה ייחודית.
+- `alt` — טקסט חלופי לנגישות ולמקרה שהתמונה לא נטענת.
+- `loading="lazy"` — הדפדפן טוען תמונה רק כשהיא מתקרבת למסך.
+- אם אין תמונות → "No photos for this breed yet."
+
+**`slice(0, limit)`:** לגזע יכולות להיות מאות תמונות. `slice` מחזיר עותק עם `limit` הראשונות (ברירת מחדל 12), בלי לשנות את המערך המקורי.
+
+---
+
 ## 11. בדיקות עם Vitest
 
 **הפקודות:**
 - `npm test` → `vitest run` — מריץ פעם אחת ויוצא.
 - `npm run test:ui` → `vitest --ui` — מציג את הבדיקות בדפדפן.
 
-**7 בדיקות, בשני קבצים:**
+**9 בדיקות, בשני קבצים:**
 
 `src/utils/breeds.test.ts` (5):
 1. `formatBreedName('hound')` → `'Hound'`
@@ -248,9 +297,11 @@ return () => { ignore = true }
 4. ה-`id` נשאר `'hound'` (בלי פירמוט), וה-`name` הוא `'Hound'`
 5. `toBreeds({})` → `[]`
 
-`src/api/dogApi.test.ts` (2):
+`src/api/dogApi.test.ts` (4):
 6. כשה-API מצליח — `fetchBreeds` מחזיר מערך גזעים
 7. כשהשרת מחזיר 500 — `fetchBreeds` זורק `'Server error: 500'`
+8. `fetchBreedImages` מחזיר לכל היותר 12 תמונות, גם כשה-API מחזיר 20
+9. כשהגזע לא קיים (404) — `fetchBreedImages` זורק `'Server error: 404'`
 
 **מבנה בדיקה:**
 ```ts
@@ -309,6 +360,11 @@ describe('formatBreedName', () => {        // קבוצה
 16. למה מזייפים את `fetch` בבדיקות?
 17. מה היית משנה כדי להוסיף שדה חדש לגזע (למשל ארץ מוצא)?
 18. ה-API נופל — מה המשתמש רואה, ואיפה זה קורה בקוד?
+19. למה ה-state של התמונות נמצא ב-`BreedDetailPage` ולא ב-`App`?
+20. מה ההבדל בין `useEffect(..., [])` ל-`useEffect(..., [breedId])`?
+21. למה ה-`useState` וה-`useEffect` נמצאים לפני ה-`return` של "Breed not found"?
+22. מה עושה `AbortController`, ומה ההבדל בינו לבין `ignore`?
+23. איך העמוד יודע שהוא עדיין טוען תמונות, בלי `isLoading` ב-state?
 
 ---
 
@@ -320,3 +376,5 @@ describe('formatBreedName', () => {        // קבוצה
 - להוסיף ל-`NavBar` קישור `<NavLink to="/breeds/hound">Hound</NavLink>` → לראות שהוא מודגש רק בעמוד של Hound.
 - לשנות `toUpperCase()` ל-`toLowerCase()` → לראות בדיקות אדומות ב-`npm run test:ui`.
 - להוסיף ל-`BreedCard` שורה שמציגה את ה-`id` של הגזע.
+- לשנות ב-`BreedDetailPage` את המספר `12` ל-`4` → לראות 4 תמונות בגלריה.
+- ב-F12 ← Network לבחור Slow 4G, להיכנס ל-Hound ומיד לחזור → לראות בקשה מבוטלת (canceled).

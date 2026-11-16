@@ -12,3 +12,10 @@ export interface BreedsApiResponse {
   message: Record<string, string[]>
   status: string
 }
+
+// התשובה של Dog CEO לכתובת /breed/{breed}/images
+// message הוא מערך של כתובות תמונה
+export interface BreedImagesApiResponse {
+  message: string[]
+  status: string
+}
