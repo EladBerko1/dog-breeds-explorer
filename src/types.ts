@@ -19,3 +19,10 @@ export interface BreedImagesApiResponse {
   message: string[]
   status: string
 }
+
+// התשובה של Dog CEO לכתובת /breeds/image/random
+// message היא כתובת של תמונה אחת
+export interface RandomImageApiResponse {
+  message: string
+  status: string
+}

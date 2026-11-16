@@ -1,7 +1,7 @@
 # הכנה להגנה — Dog Breeds Explorer
 
 מסמך לימוד אישי לקראת ההגנה על הפרויקט. מתעדכן אחרי כל משימה.
-**מצב נוכחי:** משימות 1–7 הושלמו (רשימה, ניתוב, API, בדיקות, גלריית תמונות, חיפוש וסינון, מועדפים). עוד לא נבנו: חידון, 404, עיצוב.
+**מצב נוכחי:** משימות 1–8 הושלמו (רשימה, ניתוב, API, בדיקות, גלריית תמונות, חיפוש וסינון, מועדפים, חידון). עוד לא נבנו: 404, עיצוב.
 
 **מה ההגנה בודקת:** כ-7 דקות של שאלות על הקוד שלי, בלי סוכן ובלי חיפוש. המרצה עשוי לבקש לפתוח קובץ ולהראות איפה משהו קורה. הנקודות על הפרויקט ניתנות רק אם אני יודע להסביר אותו.
 
@@ -22,12 +22,13 @@
 | `src/main.tsx` | נקודת הכניסה: טוען את ה-CSS, עוטף ב-`BrowserRouter` ומצייר את `App` |
 | `src/App.tsx` | מחזיק את ה-state של הגזעים, מושך מה-API, ומגדיר את הכתובות |
 | `src/types.ts` | הטיפוסים: `Breed`, `BreedsApiResponse`, `BreedImagesApiResponse` |
-| `src/api/dogApi.ts` | כל הפנייה ל-API: `fetchBreeds()` ו-`fetchBreedImages()` |
+| `src/api/dogApi.ts` | כל הפנייה ל-API: `fetchBreeds()`, `fetchBreedImages()`, `fetchRandomImage()` |
 | `src/utils/breeds.ts` | לוגיקה טהורה: `toBreeds()`, `formatBreedName()`, `filterBreeds()` |
 | `src/utils/favorites.ts` | לוגיקה טהורה של המועדפים: `toggleFavorite()`, `parseFavorites()` |
+| `src/utils/quiz.ts` | לוגיקה טהורה של החידון: `getBreedIdFromImageUrl()`, `shuffle()`, `buildAnswerOptions()` |
 | `src/hooks/useFavorites.ts` | custom hook: state של המועדפים + שמירה ב-`localStorage` |
-| `src/components/` | רכיבים: `NavBar`, `BreedList`, `BreedCard`, `Loader`, `ErrorMessage`, `ImageGallery`, `SearchBar`, `FavoriteButton` |
-| `src/pages/` | עמודים: `BreedsPage`, `BreedDetailPage`, `FavoritesPage` |
+| `src/components/` | רכיבים: `NavBar`, `BreedList`, `BreedCard`, `Loader`, `ErrorMessage`, `ImageGallery`, `SearchBar`, `FavoriteButton`, `QuizOptions` |
+| `src/pages/` | עמודים: `BreedsPage`, `BreedDetailPage`, `FavoritesPage`, `QuizPage` |
 | `src/index.css` | כל ה-CSS |
 | `*.test.ts` | בדיקות Vitest |
 
@@ -67,8 +68,10 @@ App  (מחזיק: breeds, isLoading, error, ו-favorites דרך useFavorites)
     ├── "/breeds/:id" → BreedDetailPage(breeds, isFavorite, onToggleFavorite)  (מחזיק: result של התמונות)
     │                    ├── FavoriteButton(isFavorite, onToggle)
     │                    └── Loader / ErrorMessage / ImageGallery(images, breedName)
-    └── "/favorites"  → FavoritesPage(breeds, favoriteIds, onRemove)
-                         └── BreedList(favoriteBreeds, onRemove) → BreedCard(breed, onRemove)
+    ├── "/favorites"  → FavoritesPage(breeds, favoriteIds, onRemove)
+    │                    └── BreedList(favoriteBreeds, onRemove) → BreedCard(breed, onRemove)
+    └── "/quiz"       → QuizPage(breeds)  (מחזיק: round, result, selectedId, score)
+                         └── QuizOptions(options, correctId, selectedId, onSelect)
 ```
 
 **המידע זורם מלמעלה למטה דרך props.** `App` מעביר את `breeds` לעמודים, `BreedsPage` מעביר ל-`BreedList`, ו-`BreedList` נותן לכל `BreedCard` גזע אחד.
@@ -386,13 +389,65 @@ useEffect(() => {
 
 ---
 
+## 10ד. החידון "Guess the Breed" (העמוד הנוסף השני)
+
+**מה המשתמש עושה:** רואה תמונה של כלב אקראי, בוחר מבין 4 גזעים. אחרי הבחירה: התשובה הנכונה בירוק, בחירה שגויה באדום, הודעה "Correct!" או "Not quite — it's a X", והניקוד מתעדכן ("Score: 2 / 3"). "Next question →" מביא כלב חדש.
+
+**מאיפה התמונה:** `/breeds/image/random` מחזיר כתובת אחת, למשל:
+`https://images.dog.ceo/breeds/hound-afghan/n02088094_1003.jpg`
+
+**איך יודעים מה התשובה הנכונה:** שם הגזע **נמצא בתוך הכתובת**. `getBreedIdFromImageUrl`:
+```ts
+const match = url.match(//breeds/([^/]+)//)   // תופס את מה שבין /breeds/ ל-/ הבא → "hound-afghan"
+return match[1].split('-')[0]                      // החלק שלפני המקף → "hound"
+```
+- **regex** (ביטוי רגולרי): `([^/]+)` = "תפוס כמה שיותר תווים שאינם /". הסוגריים שומרים את מה שנתפס ב-`match[1]`.
+- לוקחים את **הגזע הראשי** (לפני המקף), כי הוא ה-`id` ברשימת הגזעים שלנו.
+- אם הכתובת לא בפורמט — מחזירים `null`, וב-`QuizPage` זה הופך לשגיאה.
+- בדקתי על 20 תמונות אקראיות: כל הגזעים שחולצו קיימים ברשימה.
+
+**איך בונים את 4 התשובות (`buildAnswerOptions`):**
+1. מכל הגזעים, מוציאים את התשובה הנכונה.
+2. מערבבים ולוקחים 3 → תשובות שגויות **שונות**.
+3. מוסיפים את הנכונה ומערבבים שוב → הנכונה לא תמיד במקום הראשון.
+
+**`shuffle` — אלגוריתם Fisher–Yates:** עוברים מהסוף להתחלה, ומחליפים כל פריט עם פריט אקראי שלפניו (או איתו). זה ערבוב הוגן — לכל סדר אותו סיכוי. מחזירים **עותק** (`[...items]`) ולא משנים את המקור.
+
+**`random` כפרמטר:** ברירת המחדל היא `Math.random`, אבל אפשר להעביר פונקציה אחרת. זה מאפשר בבדיקות לקבל תוצאה קבועה. (הבדיקות שלנו בודקות תכונות שתמיד נכונות — 4 תשובות, שונות, כולל הנכונה — ולכן לא צריכות את זה.)
+
+**Generic `<T>`:** `shuffle<T>(items: T[]): T[]` עובד על מערך מכל סוג — מחרוזות, מספרים, גזעים — ומחזיר מערך מאותו סוג.
+
+**ה-state ב-`QuizPage`:**
+| state | מה הוא |
+|---|---|
+| `round` | מספר הסיבוב. "Next question" מגדיל אותו |
+| `result` | השאלה של הסיבוב (תמונה, תשובה נכונה, אפשרויות) או שגיאה, **עם מספר הסיבוב שלה** |
+| `selectedId` | מה המשתמש בחר (`null` = עוד לא ענה) |
+| `score` | `{ correct, answered }` |
+
+**`round` כ"טריגר":** ה-`useEffect` תלוי ב-`[round, breeds]`. כשלוחצים "Next question" → `setRound(current => current + 1)` → ה-effect רץ שוב → כלב חדש. זו דרך לבקש מ-effect לרוץ שוב בתגובה לפעולה של המשתמש.
+
+**טעינה מחושבת, כמו בגלריה:** `isLoading = result === null || result.round !== round`. אחרי "Next", `round` כבר גדל אבל `result` עדיין של הסיבוב הקודם → טוען.
+
+**`throw` בתוך `.then`:** אם הכתובת לא בפורמט, `throw new Error(...)` בתוך `.then` מעביר ישר ל-`.catch`. כך כל סוגי הכשלים מטופלים במקום אחד.
+
+**`QuizOptions` — רכיב בלי state:** מקבל `options`, `correctId`, `selectedId` ו-`onSelect`, ומחליט על הצבע של כל כפתור:
+- עוד לא ענו → כל הכפתורים רגילים ולחיצים.
+- ענו → הנכונה `correct` (ירוק), הבחירה השגויה `wrong` (אדום), כולם `disabled`.
+
+**`handleSelect` מגן מלחיצה כפולה:** `if (selectedId !== null ...) return` — אי אפשר לענות פעמיים על אותה שאלה ולקבל ניקוד כפול.
+
+**הניקוד מתאפס כשעוזבים את העמוד:** הוא state של `QuizPage`, שיורד מהמסך. (אם ישאלו איך לשמור — להעלות ל-`App` או ל-`localStorage`, כמו המועדפים.)
+
+---
+
 ## 11. בדיקות עם Vitest
 
 **הפקודות:**
 - `npm test` → `vitest run` — מריץ פעם אחת ויוצא.
 - `npm run test:ui` → `vitest --ui` — מציג את הבדיקות בדפדפן.
 
-**20 בדיקות, בשלושה קבצים:**
+**27 בדיקות, בארבעה קבצים:**
 
 `src/utils/breeds.test.ts` (10):
 1. `formatBreedName('hound')` → `'Hound'`
@@ -405,6 +460,11 @@ useEffect(() => {
 `src/utils/favorites.test.ts` (6):
 - `toggleFavorite`: מוסיף גזע חדש · מסיר גזע קיים · לא משנה את המערך המקורי
 - `parseFavorites`: קורא רשימה שמורה · `null` → `[]` · טקסט פגום (לא JSON, או אובייקט) → `[]`
+
+`src/utils/quiz.test.ts` (7):
+- `getBreedIdFromImageUrl`: "labrador" מכתובת רגילה · "hound" מכתובת עם תת-גזע (`hound-afghan`) · `null` לכתובת לא קשורה
+- `shuffle`: אותם פריטים, והמקור לא משתנה
+- `buildAnswerOptions`: 4 תשובות שונות כולל הנכונה · רק גזעים מהרשימה · פחות תשובות כשאין מספיק גזעים
 
 `src/api/dogApi.test.ts` (4):
 6. כשה-API מצליח — `fetchBreeds` מחזיר מערך גזעים
@@ -488,6 +548,12 @@ describe('formatBreedName', () => {        // קבוצה
 35. למה `toggleFavorite` מחזיר מערך חדש ולא עושה `push`?
 36. מה קורה אם ב-`localStorage` יש טקסט פגום?
 37. איך אותו `BreedCard` מציג כפתור "Remove" רק בעמוד המועדפים?
+38. איך החידון יודע מה התשובה הנכונה?
+39. מה ה-regex ב-`getBreedIdFromImageUrl` תופס, ולמה לוקחים רק את החלק שלפני המקף?
+40. איך מוודאים שהתשובה הנכונה לא תמיד במקום הראשון, ושאין תשובות כפולות?
+41. מה קורה בקוד מהלחיצה על "Next question" ועד שמופיע כלב חדש?
+42. למה אי אפשר לקבל ניקוד כפול על אותה שאלה?
+43. מה זה `<T>` ב-`shuffle<T>`?
 
 ---
 
@@ -500,6 +566,7 @@ describe('formatBreedName', () => {        // קבוצה
 - לשנות `toUpperCase()` ל-`toLowerCase()` → לראות בדיקות אדומות ב-`npm run test:ui`.
 - להוסיף ל-`BreedCard` שורה שמציגה את ה-`id` של הגזע.
 - לשנות ב-`BreedDetailPage` את המספר `12` ל-`4` → לראות 4 תמונות בגלריה.
+- לשנות ב-`QuizPage` את `buildAnswerOptions(correctId, allIds)` ל-`buildAnswerOptions(correctId, allIds, 6)` → 6 תשובות.
 - ב-F12 ← Application ← Local Storage למחוק את `dog-breeds-favorites` ולרענן → המועדפים ריקים.
 - לשנות שם את הערך ל-`abc` ולרענן → האפליקציה לא קורסת (בזכות `parseFavorites`).
 - להוסיף ל-`filterBreeds` חיפוש גם בתתי-הגזעים (`breed.subBreeds.some(...)`) → "french" ימצא את bulldog.

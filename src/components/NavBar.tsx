@@ -1,7 +1,6 @@
 import { Link, NavLink } from 'react-router'
 
 // תפריט הניווט. NavLink מוסיף לבד את המחלקה active לקישור של העמוד הנוכחי.
-// קישור לחידון יתווסף כשהעמוד ייבנה.
 interface NavBarProps {
   favoritesCount: number
 }
@@ -16,6 +15,7 @@ function NavBar({ favoritesCount }: NavBarProps) {
         Breeds
       </NavLink>
       <NavLink to="/favorites">Favorites ({favoritesCount})</NavLink>
+      <NavLink to="/quiz">Quiz</NavLink>
     </nav>
   )
 }

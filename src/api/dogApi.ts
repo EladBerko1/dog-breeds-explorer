@@ -1,4 +1,4 @@
-import type { Breed, BreedImagesApiResponse, BreedsApiResponse } from '../types'
+import type { Breed, BreedImagesApiResponse, BreedsApiResponse, RandomImageApiResponse } from '../types'
 import { toBreeds } from '../utils/breeds'
 
 const BASE_URL = 'https://dog.ceo/api'
@@ -41,4 +41,21 @@ export async function fetchBreedImages(
   }
 
   return data.message.slice(0, limit)
+}
+
+// מושך כתובת של תמונה אקראית מכל הגזעים (בשביל החידון).
+export async function fetchRandomImage(signal?: AbortSignal): Promise<string> {
+  const response = await fetch(`${BASE_URL}/breeds/image/random`, { signal })
+
+  if (!response.ok) {
+    throw new Error(`Server error: ${response.status}`)
+  }
+
+  const data: RandomImageApiResponse = await response.json()
+
+  if (data.status !== 'success') {
+    throw new Error('The API returned an unexpected response')
+  }
+
+  return data.message
 }
