@@ -56,8 +56,17 @@ function BreedDetailPage({ breeds, isFavorite, onToggleFavorite }: BreedDetailPa
     }
   }, [breedId])
 
+  // id בכתובת שלא מתאים לאף גזע, למשל /breeds/xyz
   if (!breed) {
-    return <p>Breed not found.</p>
+    return (
+      <div className="not-found">
+        <h1>Breed not found</h1>
+        <p>
+          There is no breed called <code>{id}</code>.
+        </p>
+        <Link to="/">← Back to all breeds</Link>
+      </div>
+    )
   }
 
   // אין עדיין תוצאה לגזע הנוכחי = עדיין טוענים

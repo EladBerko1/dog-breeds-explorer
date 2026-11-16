@@ -8,6 +8,7 @@ import { useFavorites } from './hooks/useFavorites'
 import BreedDetailPage from './pages/BreedDetailPage'
 import BreedsPage from './pages/BreedsPage'
 import FavoritesPage from './pages/FavoritesPage'
+import NotFoundPage from './pages/NotFoundPage'
 import QuizPage from './pages/QuizPage'
 import type { Breed } from './types'
 
@@ -72,6 +73,8 @@ function App() {
           }
         />
         <Route path="/quiz" element={<QuizPage breeds={breeds} />} />
+        {/* "*" תופס כל כתובת שלא התאימה לאף Route למעלה */}
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     )
   }

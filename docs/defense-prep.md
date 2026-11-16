@@ -1,7 +1,7 @@
 # הכנה להגנה — Dog Breeds Explorer
 
 מסמך לימוד אישי לקראת ההגנה על הפרויקט. מתעדכן אחרי כל משימה.
-**מצב נוכחי:** משימות 1–8 הושלמו (רשימה, ניתוב, API, בדיקות, גלריית תמונות, חיפוש וסינון, מועדפים, חידון). עוד לא נבנו: 404, עיצוב.
+**מצב נוכחי:** משימות 1–9 הושלמו (רשימה, ניתוב, API, בדיקות, גלריית תמונות, חיפוש וסינון, מועדפים, חידון, 404). עוד לא נבנו: עיצוב, README.
 
 **מה ההגנה בודקת:** כ-7 דקות של שאלות על הקוד שלי, בלי סוכן ובלי חיפוש. המרצה עשוי לבקש לפתוח קובץ ולהראות איפה משהו קורה. הנקודות על הפרויקט ניתנות רק אם אני יודע להסביר אותו.
 
@@ -28,7 +28,7 @@
 | `src/utils/quiz.ts` | לוגיקה טהורה של החידון: `getBreedIdFromImageUrl()`, `shuffle()`, `buildAnswerOptions()` |
 | `src/hooks/useFavorites.ts` | custom hook: state של המועדפים + שמירה ב-`localStorage` |
 | `src/components/` | רכיבים: `NavBar`, `BreedList`, `BreedCard`, `Loader`, `ErrorMessage`, `ImageGallery`, `SearchBar`, `FavoriteButton`, `QuizOptions` |
-| `src/pages/` | עמודים: `BreedsPage`, `BreedDetailPage`, `FavoritesPage`, `QuizPage` |
+| `src/pages/` | עמודים: `BreedsPage`, `BreedDetailPage`, `FavoritesPage`, `QuizPage`, `NotFoundPage` |
 | `src/index.css` | כל ה-CSS |
 | `*.test.ts` | בדיקות Vitest |
 
@@ -70,8 +70,9 @@ App  (מחזיק: breeds, isLoading, error, ו-favorites דרך useFavorites)
     │                    └── Loader / ErrorMessage / ImageGallery(images, breedName)
     ├── "/favorites"  → FavoritesPage(breeds, favoriteIds, onRemove)
     │                    └── BreedList(favoriteBreeds, onRemove) → BreedCard(breed, onRemove)
-    └── "/quiz"       → QuizPage(breeds)  (מחזיק: round, result, selectedId, score)
-                         └── QuizOptions(options, correctId, selectedId, onSelect)
+    ├── "/quiz"       → QuizPage(breeds)  (מחזיק: round, result, selectedId, score)
+    │                    └── QuizOptions(options, correctId, selectedId, onSelect)
+    └── "*"           → NotFoundPage
 ```
 
 **המידע זורם מלמעלה למטה דרך props.** `App` מעביר את `breeds` לעמודים, `BreedsPage` מעביר ל-`BreedList`, ו-`BreedList` נותן לכל `BreedCard` גזע אחד.
@@ -135,6 +136,20 @@ function BreedCard({ breed }: BreedCardProps) { ... }
 **למה `NavBar` נשאר בכל עמוד:** הוא נמצא ב-`App` **מחוץ** ל-`Routes`.
 
 **מה `end` עושה ב-`<NavLink to="/" end>`:** בלי `end`, קישור מסומן כפעיל גם בכתובות שמתחתיו. למשל `<NavLink to="/favorites">` היה פעיל גם ב-`/favorites/123`. עם `end` הוא פעיל רק בכתובת המדויקת. בקישור `/` זה לא משנה בפועל, כי React Router כבר מטפל בו כך, אבל `end` מבהיר את הכוונה.
+
+### עמוד 404 וגזע שלא קיים
+
+**שני מקרים שונים:**
+
+| כתובת | מה קורה | איפה בקוד |
+|---|---|---|
+| `/abc` | אף `Route` לא מתאים → `path="*"` תופס → `NotFoundPage` | `App.tsx` |
+| `/breeds/xyz` | **מתאים** ל-`/breeds/:id`, אבל `find` לא מוצא גזע → "Breed not found" | `BreedDetailPage.tsx` |
+
+- `path="*"` = "כל כתובת". React Router בוחר את ה-`Route` **הכי ספציפי** שמתאים, ולכן `*` נבחר רק כשאף כתובת אחרת לא מתאימה.
+- `/breeds/xyz` לא מגיע ל-404, כי מבחינת הניתוב הוא תקין — `:id` מקבל כל ערך. רק העמוד יודע שאין גזע כזה.
+- `useLocation()` מחזיר את הכתובת הנוכחית. `location.pathname` = `"/abc"`, ומציגים אותו למשתמש.
+- **למה זה עובד גם ברענון:** שרת הפיתוח של Vite מחזיר את `index.html` לכל כתובת, ו-React Router מחליט מה להציג.
 
 ### שאלה צפויה: מה קורה מהלחיצה על פריט ועד שהפרטים מופיעים?
 1. לוחצים על הכרטיס של Hound. הכרטיס הוא `Link` עם `to={`/breeds/${breed.id}`}`.
@@ -554,6 +569,8 @@ describe('formatBreedName', () => {        // קבוצה
 41. מה קורה בקוד מהלחיצה על "Next question" ועד שמופיע כלב חדש?
 42. למה אי אפשר לקבל ניקוד כפול על אותה שאלה?
 43. מה זה `<T>` ב-`shuffle<T>`?
+44. מה ההבדל בין `/abc` ל-`/breeds/xyz`? למה אחד מגיע ל-404 והשני לא?
+45. מה עושה `path="*"`? מה היה קורה אם הוא היה ראשון ברשימת ה-Routes?
 
 ---
 
@@ -566,6 +583,7 @@ describe('formatBreedName', () => {        // קבוצה
 - לשנות `toUpperCase()` ל-`toLowerCase()` → לראות בדיקות אדומות ב-`npm run test:ui`.
 - להוסיף ל-`BreedCard` שורה שמציגה את ה-`id` של הגזע.
 - לשנות ב-`BreedDetailPage` את המספר `12` ל-`4` → לראות 4 תמונות בגלריה.
+- להוסיף ב-`NotFoundPage` קישור נוסף ל-`/quiz` → לראות אותו ב-`/abc`.
 - לשנות ב-`QuizPage` את `buildAnswerOptions(correctId, allIds)` ל-`buildAnswerOptions(correctId, allIds, 6)` → 6 תשובות.
 - ב-F12 ← Application ← Local Storage למחוק את `dog-breeds-favorites` ולרענן → המועדפים ריקים.
 - לשנות שם את הערך ל-`abc` ולרענן → האפליקציה לא קורסת (בזכות `parseFavorites`).
