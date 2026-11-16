@@ -10,12 +10,15 @@ interface BreedCardProps {
 // אם התקבלה onRemove (בעמוד המועדפים), מוצג גם כפתור הסרה.
 function BreedCard({ breed, onRemove }: BreedCardProps) {
   const count = breed.subBreeds.length
+  let subBreedsText = `${count} sub-breeds`
+  if (count === 0) subBreedsText = 'No sub-breeds'
+  else if (count === 1) subBreedsText = '1 sub-breed'
 
   return (
     <li className="breed-card">
       <Link to={`/breeds/${breed.id}`}>
         <h2>{breed.name}</h2>
-        <p>{count === 0 ? 'No sub-breeds' : `${count} sub-breeds`}</p>
+        <p>{subBreedsText}</p>
       </Link>
       {onRemove && (
         <button type="button" className="remove-button" onClick={() => onRemove(breed.id)}>

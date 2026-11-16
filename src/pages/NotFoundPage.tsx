@@ -11,7 +11,9 @@ function NotFoundPage() {
       <p>
         There is no page at <code>{location.pathname}</code>.
       </p>
-      <Link to="/">← Back to all breeds</Link>
+      <Link to="/" className="back-link">
+        ← Back to all breeds
+      </Link>
     </div>
   )
 }

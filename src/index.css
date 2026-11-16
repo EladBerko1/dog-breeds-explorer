@@ -1,33 +1,174 @@
-/* עיצוב בסיסי. העיצוב המלא יגיע במשימה 11 */
+/* =========================================================
+   Dog Breeds Explorer — כל העיצוב של האפליקציה
+   מסודר לפי אזורים: משתנים · בסיס · תפריט · רשימה · פרטים ·
+   חיפוש · מועדפים · חידון · מצבים · מסך צר
+   ========================================================= */
+
+/* ---------- משתנים: צבעים ומידות במקום אחד ---------- */
+:root {
+  --color-bg: #faf7f2;
+  --color-surface: #ffffff;
+  --color-text: #2b2b2b;
+  --color-muted: #6b6b6b;
+  --color-border: #e5ded3;
+  --color-border-strong: #cfc6b8;
+  --color-accent: #b5651d; /* חום-כתום של כלב */
+  --color-accent-soft: #fbeedd;
+  --color-placeholder: #eee6da;
+  --color-success-bg: #e3f5e1;
+  --color-success: #3f8a3f;
+  --color-error-bg: #fdf0f0;
+  --color-error: #8a1f1f;
+  --color-star-bg: #fff4d6;
+  --color-star: #d9a520;
+
+  --radius: 10px;
+  --shadow: 0 1px 3px rgba(60, 40, 20, 0.08);
+  --shadow-hover: 0 6px 16px rgba(60, 40, 20, 0.14);
+  --page-padding: 16px;
+}
+
+/* ---------- בסיס ---------- */
 * {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  font-family: system-ui, sans-serif;
-  background: #faf7f2;
-  color: #2b2b2b;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  line-height: 1.5;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+h1 {
+  margin: 8px 0 12px;
+  font-size: 1.9rem;
+  line-height: 1.2;
+}
+
+h2 {
+  font-size: 1.2rem;
+}
+
+a {
+  color: var(--color-accent);
+}
+
+img {
+  max-width: 100%;
+}
+
+code {
+  background: var(--color-placeholder);
+  padding: 2px 6px;
+  border-radius: 4px;
+  overflow-wrap: anywhere; /* כתובת ארוכה לא תגרום לגלילה הצידה */
+}
+
+/* מסגרת ברורה למי שמנווט במקלדת */
+:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 .app {
-  max-width: 960px;
+  max-width: 1040px;
   margin: 0 auto;
-  padding: 16px;
+  padding: var(--page-padding);
 }
 
+/* כפתור בסיסי: כל הכפתורים באפליקציה יורשים ממנו */
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+
+button:hover:not(:disabled) {
+  border-color: var(--color-accent);
+}
+
+/* ---------- תפריט ניווט ---------- */
+.nav-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+  padding: 12px var(--page-padding);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: var(--shadow);
+}
+
+.nav-bar a {
+  color: var(--color-muted);
+  text-decoration: none;
+  padding: 4px 2px;
+  border-bottom: 2px solid transparent;
+}
+
+.nav-bar a:hover {
+  color: var(--color-text);
+}
+
+/* NavLink מוסיף לבד את המחלקה active לעמוד הנוכחי */
+.nav-bar a.active {
+  color: var(--color-text);
+  font-weight: 700;
+  border-bottom-color: var(--color-accent);
+}
+
+.nav-bar .nav-brand {
+  margin-right: auto; /* דוחף את שאר הקישורים לצד השני */
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--color-text);
+  border-bottom: none;
+}
+
+/* ---------- רשימת הגזעים ---------- */
 .breed-list {
   list-style: none;
   padding: 0;
+  margin: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 12px;
 }
 
 .breed-card {
-  background: #fff;
-  border: 1px solid #e5ded3;
-  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
+}
+
+.breed-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+
+.breed-card a {
+  flex: 1;
+  display: block;
+  padding: 14px 16px;
+  color: inherit;
+  text-decoration: none;
 }
 
 .breed-card h2 {
@@ -37,70 +178,61 @@ body {
 
 .breed-card p {
   margin: 0;
-  color: #6b6b6b;
+  color: var(--color-muted);
+  font-size: 0.95rem;
 }
 
-.nav-bar {
+.results-count {
+  color: var(--color-muted);
+  margin: 0 0 12px;
+}
+
+/* ---------- עמוד פרטים ---------- */
+.back-link {
+  display: inline-block;
+  margin-bottom: 4px;
+  text-decoration: none;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+.sub-breed-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 8px;
   display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 12px 16px;
-  background: #fff;
-  border-bottom: 1px solid #e5ded3;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-.nav-bar a {
-  color: #6b6b6b;
-  text-decoration: none;
-}
-
-.nav-bar a.active {
-  color: #2b2b2b;
-  font-weight: 700;
-}
-
-.nav-bar .nav-brand {
-  font-weight: 700;
-  color: #2b2b2b;
-}
-
-.breed-card a {
-  display: block;
-  padding: 12px 16px;
-  color: inherit;
-  text-decoration: none;
-}
-
-.status-message {
-  padding: 24px 0;
-  color: #6b6b6b;
-}
-
-.error-message {
-  padding: 12px 16px;
-  border: 1px solid #e0a3a3;
-  border-radius: 8px;
-  background: #fdf0f0;
-  color: #8a1f1f;
+.sub-breed-list li {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--color-accent-soft);
+  text-transform: capitalize;
 }
 
 .image-gallery {
   list-style: none;
   padding: 0;
+  margin: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
 }
 
 .image-gallery img {
   display: block;
   width: 100%;
-  height: 160px;
-  object-fit: cover;
-  border-radius: 8px;
-  background: #eee6da;
+  height: 180px;
+  object-fit: cover; /* ממלא את הריבוע בלי לעוות את התמונה */
+  border-radius: var(--radius);
+  background: var(--color-placeholder);
 }
 
+/* ---------- חיפוש וסינון ---------- */
 .search-bar {
   display: flex;
   flex-wrap: wrap;
@@ -110,116 +242,169 @@ body {
 }
 
 .search-bar input[type='search'] {
-  flex: 1 1 220px;
-  padding: 8px 12px;
-  font-size: 1rem;
-  border: 1px solid #cfc6b8;
-  border-radius: 8px;
+  flex: 1 1 240px;
+  padding: 10px 14px;
+  font: inherit;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius);
+  background: var(--color-surface);
 }
 
 .search-bar label {
   display: flex;
   align-items: center;
   gap: 6px;
-}
-
-.results-count {
-  color: #6b6b6b;
-  margin: 0 0 8px;
-}
-
-.breed-card {
-  display: flex;
-  flex-direction: column;
-}
-
-.breed-card a {
-  flex: 1;
-}
-
-.favorite-button,
-.remove-button {
-  font: inherit;
   cursor: pointer;
-  border: 1px solid #cfc6b8;
-  border-radius: 8px;
-  background: #fff;
 }
 
+.search-bar input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-accent);
+}
+
+/* ---------- מועדפים ---------- */
 .favorite-button {
-  padding: 8px 14px;
+  padding: 8px 16px;
   margin-bottom: 8px;
 }
 
 .favorite-button[aria-pressed='true'] {
-  background: #fff4d6;
-  border-color: #e0b84c;
+  background: var(--color-star-bg);
+  border-color: var(--color-star);
 }
 
 .remove-button {
-  margin: 0 16px 12px;
-  padding: 4px 10px;
   align-self: flex-start;
-  color: #8a1f1f;
+  margin: 0 16px 14px;
+  padding: 4px 12px;
+  color: var(--color-error);
 }
 
+.remove-button:hover:not(:disabled) {
+  background: var(--color-error-bg);
+  border-color: var(--color-error);
+}
+
+/* ---------- חידון ---------- */
 .quiz-image {
   display: block;
   width: 100%;
-  max-width: 480px;
-  height: 320px;
-  object-fit: contain;
-  background: #eee6da;
-  border-radius: 8px;
+  max-width: 520px;
+  height: 340px;
+  object-fit: contain; /* מציג את כל הכלב, גם אם נשארים שוליים */
+  background: var(--color-placeholder);
+  border-radius: var(--radius);
   margin-bottom: 12px;
 }
 
 .quiz-options {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  max-width: 480px;
+  gap: 10px;
+  max-width: 520px;
 }
 
-.quiz-option,
-.quiz-next {
-  font: inherit;
-  padding: 10px 12px;
-  border: 1px solid #cfc6b8;
-  border-radius: 8px;
-  background: #fff;
-  cursor: pointer;
+.quiz-option {
+  padding: 12px;
+  text-align: center;
 }
 
 .quiz-option:disabled {
   cursor: default;
-  color: #2b2b2b;
 }
 
 .quiz-option.correct {
-  background: #e3f5e1;
-  border-color: #5aa65a;
+  background: var(--color-success-bg);
+  border-color: var(--color-success);
+  font-weight: 700;
 }
 
 .quiz-option.wrong {
-  background: #fdf0f0;
-  border-color: #d06a6a;
+  background: var(--color-error-bg);
+  border-color: var(--color-error);
 }
 
 .quiz-feedback {
   font-weight: 700;
+  font-size: 1.1rem;
 }
 
 .quiz-next {
   margin-top: 8px;
+  padding: 10px 18px;
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
+  font-weight: 700;
+}
+
+.quiz-next:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+/* ---------- מצבים: טעינה · שגיאה · לא נמצא ---------- */
+.status-message {
+  padding: 24px 0;
+  color: var(--color-muted);
+}
+
+.error-message {
+  padding: 12px 16px;
+  border: 1px solid #e0a3a3;
+  border-radius: var(--radius);
+  background: var(--color-error-bg);
+  color: var(--color-error);
+}
+
+.error-message p {
+  margin: 4px 0 0;
 }
 
 .not-found {
   padding: 24px 0;
 }
 
-.not-found code {
-  background: #eee6da;
-  padding: 2px 6px;
-  border-radius: 4px;
+/* ---------- מסך צר (טלפון) ---------- */
+@media (max-width: 600px) {
+  :root {
+    --page-padding: 12px;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  .nav-bar {
+    gap: 4px 14px;
+  }
+
+  /* במסך צר שם האפליקציה תופס שורה שלמה, והקישורים יורדים מתחתיו */
+  .nav-bar .nav-brand {
+    flex-basis: 100%;
+  }
+
+  .breed-list {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 8px;
+  }
+
+  .image-gallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .image-gallery img {
+    height: 130px;
+  }
+
+  .quiz-image {
+    height: 240px;
+  }
+}
+
+@media (max-width: 360px) {
+  .quiz-options {
+    grid-template-columns: 1fr;
+  }
 }

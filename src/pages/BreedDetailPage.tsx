@@ -64,7 +64,9 @@ function BreedDetailPage({ breeds, isFavorite, onToggleFavorite }: BreedDetailPa
         <p>
           There is no breed called <code>{id}</code>.
         </p>
-        <Link to="/">← Back to all breeds</Link>
+        <Link to="/" className="back-link">
+        ← Back to all breeds
+      </Link>
       </div>
     )
   }
@@ -83,7 +85,9 @@ function BreedDetailPage({ breeds, isFavorite, onToggleFavorite }: BreedDetailPa
 
   return (
     <>
-      <Link to="/">← Back to all breeds</Link>
+      <Link to="/" className="back-link">
+        ← Back to all breeds
+      </Link>
       <h1>{breed.name}</h1>
       <FavoriteButton isFavorite={isFavorite(breed.id)} onToggle={() => onToggleFavorite(breed.id)} />
       {breed.subBreeds.length === 0 ? (
@@ -91,7 +95,7 @@ function BreedDetailPage({ breeds, isFavorite, onToggleFavorite }: BreedDetailPa
       ) : (
         <>
           <h2>Sub-breeds</h2>
-          <ul>
+          <ul className="sub-breed-list">
             {breed.subBreeds.map((subBreed) => (
               <li key={subBreed}>{subBreed}</li>
             ))}
