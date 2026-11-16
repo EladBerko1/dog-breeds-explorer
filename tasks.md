@@ -13,7 +13,7 @@
 - [x] Task 3: החלפת הקובץ המקומי ב-`fetch` אמיתי בתוך `useEffect` מ-`/breeds/list/all`, עם פונקציה שממירה את האובייקט מה-API למערך `Breed[]`, ומצבי טעינה ושגיאה (רכיבים `Loader` ו-`ErrorMessage`).
   Done when: אני רואה "Loading…" ואז את כל הגזעים מה-API (יותר מ-100), והקובץ המקומי נמחק; כשאני מעביר את DevTools למצב Offline ומרענן, אני רואה הודעת שגיאה.
 
-- [ ] Task 4: Vitest + Vitest UI — סקריפטים `test` ו-`test:ui`, ובדיקות לפונקציית ההמרה ולפורמט שם הגזע.
+- [x] Task 4: Vitest + Vitest UI — סקריפטים `test` ו-`test:ui`, ובדיקות לפונקציית ההמרה ולפורמט שם הגזע.
   Done when: `npm test` עובר עם לפחות 3 בדיקות, ו-`npm run test:ui` מציג אותן בדפדפן.
 
 - [ ] Task 5: גלריית תמונות בעמוד הפרטים (רכיב `ImageGallery`), כולל מצבי טעינה ושגיאה.
