@@ -45,4 +45,5 @@
 
 ## מסמכים נוספים
 - [tasks.md](tasks.md) — תוכנית העבודה, משימה אחרי משימה
+- [docs/architecture.md](docs/architecture.md) — מבנה הרכיבים, איפה כל state, וזרימת המידע
 - [docs/project-instructions.md](docs/project-instructions.md) — הנחיות המרצה, מקור האמת של הפרויקט
